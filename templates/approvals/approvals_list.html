@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Pending Approvals - Municipal Wallet System{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Pending Approvals</h1>
+            <p class="text-gray-600">Review and approve pending transactions</p>
+        </div>
+    </div>
+
+    <!-- Approvals List -->
+    <div class="space-y-6">
+        {% for approval in pending_approvals %}
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <!-- Transaction Info -->
+                        <div class="flex items-center mb-4">
+                            {% if approval.transaction.type == 'DEPOSIT' %}
+                                <i class="fas fa-arrow-up text-green-600 text-xl mr-3"></i>
+                            {% else %}
+                                <i class="fas fa-arrow-down text-red-600 text-xl mr-3"></i>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    {{ approval.transaction.type|title }} - {{ approval.transaction.reference }}
+                                </h3>
+                                <p class="text-sm text-gray-500">
+                                    Created by {{ approval.transaction.created_by.full_name }} • 
+                                    {{ approval.transaction.created_at|timesince }} ago
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Transaction Details -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Amount</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {% if approval.transaction.type == 'DEPOSIT' %}
+                                        <span class="text-green-600 font-semibold">+${{ approval.transaction.amount|floatformat:2|intcomma }}</span>
+                                    {% else %}
+                                        <span class="text-red-600 font-semibold">-${{ approval.transaction.amount|floatformat:2|intcomma }}</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">City</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ approval.transaction.city.name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Approval Level</dt>
+                                <dd class="mt-1 text-sm text-gray-900">Level {{ approval.approval_level }}</dd>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <dt class="text-sm font-medium text-gray-500">Description</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ approval.transaction.description }}</dd>
+                        </div>
+
+                        <!-- Approval Progress -->
+                        <div class="mb-4">
+                            <dt class="text-sm font-medium text-gray-500 mb-2">Approval Progress</dt>
+                            <div class="flex items-center space-x-2">
+                                {% for approval_item in approval.transaction.requestapproval_set.all|dictsort:"approval_level" %}
+                                    {% if approval_item.status == 'APPROVED' %}
+                                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-green-600 text-xs"></i>
+                                        </div>
+                                    {% elif approval_item.status == 'REJECTED' %}
+                                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-times text-red-600 text-xs"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-clock text-yellow-600 text-xs"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col space-y-2 ml-6">
+                        <button onclick="approveTransaction('{{ approval.transaction.id }}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                            <i class="fas fa-check mr-2"></i>
+                            Approve
+                        </button>
+                        <button onclick="rejectTransaction('{{ approval.transaction.id }}')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                            <i class="fas fa-times mr-2"></i>
+                            Reject
+                        </button>
+                        <a href="{% url 'transaction_detail' approval.transaction.id %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out text-center">
+                            <i class="fas fa-eye mr-2"></i>
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="text-center py-8">
+                    <i class="fas fa-check-circle text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-lg font-medium text-gray-900">No Pending Approvals</p>
+                    <p class="text-sm text-gray-500">All transactions have been processed.</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Hidden CSRF token for AJAX requests -->
+{% csrf_token %}
+
+<script>
+function approveTransaction(transactionId) {
+    if (confirm('Are you sure you want to approve this transaction?')) {
+        processApproval(transactionId, 'approve');
+    }
+}
+
+function rejectTransaction(transactionId) {
+    if (confirm('Are you sure you want to reject this transaction?')) {
+        processApproval(transactionId, 'reject');
+    }
+}
+
+function processApproval(transactionId, action) {
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    button.disabled = true;
+    
+    // Get CSRF token - try multiple methods
+    let csrfToken = '';
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        csrfToken = csrfInput.value;
+    } else {
+        // Fallback: get from cookies
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                csrfToken = value;
+                break;
+            }
+        }
+    }
+    
+    if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        button.innerHTML = originalText;
+        button.disabled = false;
+        return;
+    }
+    
+    console.log('Processing approval:', { transactionId, action, csrfToken: csrfToken.substring(0, 10) + '...' });
+    
+    // Make AJAX request
+    fetch(`/approvals/${transactionId}/process/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: `action=${action}&comments=`
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Show success message
+            alert(data.message);
+            // Reload the page to show updated status
+            window.location.reload();
+        } else {
+            // Show error message
+            alert('Error: ' + data.message);
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the approval: ' + error.message);
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>
+{% endblock %}

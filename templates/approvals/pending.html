@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Approvals - Municipal Wallet System{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Pending Approvals</h1>
+        <p class="text-gray-600">Review and approve pending transactions</p>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button class="whitespace-nowrap py-2 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600">
+                    All Pending
+                </button>
+                <button class="whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    Deposits
+                </button>
+                <button class="whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    Withdrawals
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Approvals List -->
+    <div class="space-y-6">
+        <!-- Approval Card 1 -->
+        <div class="bg-white shadow rounded-lg" x-data="approvalCard()">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-arrow-up text-2xl text-green-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Deposit Transaction</h3>
+                            <p class="text-sm text-gray-500">Reference: DEP-ABC123</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            2/3 Approved
+                        </span>
+                        <span class="text-sm text-gray-500">2 hours ago</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Amount</p>
+                        <p class="text-lg font-semibold text-green-600">+$15,000.00</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Account</p>
+                        <p class="text-sm text-gray-900">General Fund - New York City</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Created By</p>
+                        <p class="text-sm text-gray-900">John Smith (Treasurer)</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-1">Description</p>
+                    <p class="text-sm text-gray-900">Monthly tax revenue collection for infrastructure projects</p>
+                </div>
+                
+                <!-- Approval Progress -->
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-2">Approval Progress</p>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1 bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 66%"></div>
+                        </div>
+                        <span class="text-sm text-gray-500">2/3</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <p>✓ Approved by: Mayor Johnson, Council Member Davis</p>
+                        <p>⏳ Pending: Treasurer Wilson</p>
+                    </div>
+                </div>
+                
+                <!-- Comments Section -->
+                <div class="mb-4" x-show="showComments">
+                    <label for="comments" class="block text-sm font-medium text-gray-700 mb-1">Comments (Optional)</label>
+                    <textarea id="comments" x-model="comments" rows="2" 
+                              class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                              placeholder="Add your comments..."></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <button @click="showComments = !showComments" 
+                            class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        <i class="fas fa-comment mr-1"></i>
+                        <span x-text="showComments ? 'Hide Comments' : 'Add Comments'"></span>
+                    </button>
+                    <button @click="rejectTransaction" 
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out">
+                        <i class="fas fa-times mr-1"></i>
+                        Reject
+                    </button>
+                    <button @click="approveTransaction" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out">
+                        <i class="fas fa-check mr-1"></i>
+                        Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval Card 2 -->
+        <div class="bg-white shadow rounded-lg" x-data="approvalCard()">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-arrow-down text-2xl text-red-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Withdrawal Transaction</h3>
+                            <p class="text-sm text-gray-500">Reference: WTH-XYZ789</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            1/5 Approved
+                        </span>
+                        <span class="text-sm text-gray-500">5 hours ago</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Amount</p>
+                        <p class="text-lg font-semibold text-red-600">-$8,500.00</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Account</p>
+                        <p class="text-sm text-gray-900">Emergency Fund - New York City</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Created By</p>
+                        <p class="text-sm text-gray-900">Sarah Johnson (Mayor)</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-1">Description</p>
+                    <p class="text-sm text-gray-900">Emergency response funding for natural disaster relief</p>
+                </div>
+                
+                <!-- Approval Progress -->
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-2">Approval Progress</p>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1 bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 20%"></div>
+                        </div>
+                        <span class="text-sm text-gray-500">1/5</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <p>✓ Approved by: Council Member Davis</p>
+                        <p>⏳ Pending: Mayor Johnson, Treasurer Wilson, Council Member Brown, Council Member Miller</p>
+                    </div>
+                </div>
+                
+                <!-- Comments Section -->
+                <div class="mb-4" x-show="showComments">
+                    <label for="comments2" class="block text-sm font-medium text-gray-700 mb-1">Comments (Optional)</label>
+                    <textarea id="comments2" x-model="comments" rows="2" 
+                              class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                              placeholder="Add your comments..."></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <button @click="showComments = !showComments" 
+                            class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        <i class="fas fa-comment mr-1"></i>
+                        <span x-text="showComments ? 'Hide Comments' : 'Add Comments'"></span>
+                    </button>
+                    <button @click="rejectTransaction" 
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out">
+                        <i class="fas fa-times mr-1"></i>
+                        Reject
+                    </button>
+                    <button @click="approveTransaction" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out">
+                        <i class="fas fa-check mr-1"></i>
+                        Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approvalCard() {
+    return {
+        showComments: false,
+        comments: '',
+        
+        approveTransaction() {
+            if (confirm('Are you sure you want to approve this transaction?')) {
+                // Show loading state
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Approving...';
+                btn.disabled = true;
+                
+                // Simulate API call
+                setTimeout(() => {
+                    alert('Transaction approved successfully!');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    // Hide the card or update its state
+                    event.target.closest('.bg-white').style.display = 'none';
+                }, 1500);
+            }
+        },
+        
+        rejectTransaction() {
+            if (confirm('Are you sure you want to reject this transaction?')) {
+                // Show loading state
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Rejecting...';
+                btn.disabled = true;
+                
+                // Simulate API call
+                setTimeout(() => {
+                    alert('Transaction rejected successfully!');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    // Hide the card or update its state
+                    event.target.closest('.bg-white').style.display = 'none';
+                }, 1500);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

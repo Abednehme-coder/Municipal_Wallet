@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Create Transaction - Municipal Wallet System{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+            <div class="px-4 py-5 sm:p-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Create New Transaction</h1>
+                <p class="text-gray-600">Create a new deposit or withdrawal request</p>
+            </div>
+        </div>
+
+        <!-- Account Info -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-blue-800">Account Information</h3>
+                    <p class="text-sm text-blue-700">
+                        City: {{ user_city.name }} | 
+                        Account: {{ account.account_name }} | 
+                        Balance: ${{ account_balance|floatformat:2|intcomma }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Form -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Transaction Type -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative flex items-center p-4 border-2 {% if pre_selected_type == 'DEPOSIT' %}border-green-500 bg-green-50{% else %}border-gray-200{% endif %} rounded-lg cursor-pointer hover:border-green-500">
+                                <input type="radio" name="type" value="DEPOSIT" class="sr-only" required {% if pre_selected_type == 'DEPOSIT' %}checked{% endif %}>
+                                <div class="flex items-center">
+                                    <i class="fas fa-arrow-up text-green-600 text-xl mr-3"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Deposit</div>
+                                        <div class="text-xs text-gray-500">Add money to account</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="relative flex items-center p-4 border-2 {% if pre_selected_type == 'WITHDRAWAL' %}border-red-500 bg-red-50{% else %}border-gray-200{% endif %} rounded-lg cursor-pointer hover:border-red-500">
+                                <input type="radio" name="type" value="WITHDRAWAL" class="sr-only" required {% if pre_selected_type == 'WITHDRAWAL' %}checked{% endif %}>
+                                <div class="flex items-center">
+                                    <i class="fas fa-arrow-down text-red-600 text-xl mr-3"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Withdrawal</div>
+                                        <div class="text-xs text-gray-500">Remove money from account</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="mb-6">
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" 
+                                   name="amount" 
+                                   id="amount" 
+                                   step="0.01" 
+                                   min="0.01"
+                                   required
+                                   class="block w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea name="description" 
+                                  id="description" 
+                                  rows="3" 
+                                  required
+                                  class="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                  placeholder="Enter transaction description..."></textarea>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'dashboard' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                            Cancel
+                        </a>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                            <i class="fas fa-plus mr-2"></i>
+                            Create Transaction
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Text -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-yellow-800">Approval Process</h3>
+                    <p class="text-sm text-yellow-700">
+                        All transactions require approval from 3 approvers before execution. 
+                        You will be notified when your transaction is approved or rejected.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add some basic form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const amount = document.getElementById('amount').value;
+    const type = document.querySelector('input[name="type"]:checked');
+    
+    if (!type) {
+        e.preventDefault();
+        alert('Please select a transaction type.');
+        return;
+    }
+    
+    if (!amount || parseFloat(amount) <= 0) {
+        e.preventDefault();
+        alert('Please enter a valid amount.');
+        return;
+    }
+    
+    // For withdrawals, check if amount exceeds balance
+    if (type.value === 'WITHDRAWAL') {
+        const balance = {{ account_balance }};
+        if (parseFloat(amount) > balance) {
+            e.preventDefault();
+            alert('Withdrawal amount cannot exceed account balance.');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

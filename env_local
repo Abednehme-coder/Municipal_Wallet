@@ -1,0 +1,32 @@
+# Database
+DATABASE_URL=sqlite:///db.sqlite3
+
+# Security
+SECRET_KEY=django-insecure-change-this-in-production-key-12345
+DEBUG=True
+
+# Email Configuration (for development)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# SMS Configuration (optional for development)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Server Configuration
+PORT=8000
+NODE_ENV=development
+
+# Security
+BCRYPT_ROUNDS=12
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Notification Settings
+NOTIFICATION_EMAIL_ENABLED=True
+NOTIFICATION_SMS_ENABLED=False
+
+# Approval Settings
+DEPOSIT_APPROVALS_REQUIRED=3
+WITHDRAWAL_APPROVALS_REQUIRED=5
+APPROVAL_TIMEOUT_HOURS=72
