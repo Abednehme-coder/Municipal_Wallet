@@ -10,7 +10,7 @@ from .serializers import (
     TransactionSerializer, TransactionCreateSerializer, 
     TransactionUpdateSerializer, TransactionCancelSerializer
 )
-from .utils import get_approval_progress, check_transaction_status, create_request_approvals, can_user_process_transaction
+from .utils import get_approval_progress, check_transaction_status, create_request_approvals, can_user_process_transaction, can_user_view_transaction, can_user_cancel_transaction, get_user_visible_transactions
 from apps.audit.models import AuditLog
 # from apps.notifications.models import Notification
 from apps.approvals.models import DepositApproval, WithdrawalApproval, RequestApproval
@@ -32,13 +32,7 @@ class TransactionListView(generics.ListCreateAPIView):
         return TransactionSerializer
     
     def get_queryset(self):
-        queryset = Transaction.objects.select_related('account', 'city', 'created_by')
-        
-        # Filter by city if not admin
-        if not self.request.user.role == 'ADMIN':
-            queryset = queryset.filter(city=self.request.user.city)
-        
-        return queryset
+        return get_user_visible_transactions(self.request.user)
     
     def create(self, request, *args, **kwargs):
         # Check if user can create requests
@@ -141,13 +135,7 @@ class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return TransactionSerializer
     
     def get_queryset(self):
-        queryset = Transaction.objects.select_related('account', 'city', 'created_by')
-        
-        # Filter by city if not admin
-        if not self.request.user.role == 'ADMIN':
-            queryset = queryset.filter(city=self.request.user.city)
-        
-        return queryset
+        return get_user_visible_transactions(self.request.user)
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -209,8 +197,8 @@ def cancel_transaction(request, pk):
             'message': 'Transaction not found'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Check permissions
-    if not request.user.role == 'ADMIN' and transaction.created_by != request.user:
+    # Check permissions - user must be able to cancel this transaction
+    if not can_user_cancel_transaction(request.user, transaction):
         return Response({
             'success': False,
             'message': 'Not authorized to cancel this transaction'
@@ -255,8 +243,8 @@ def transaction_approval_progress(request, pk):
             'message': 'Transaction not found'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Check permissions
-    if not request.user.role == 'ADMIN' and transaction.city != request.user.city:
+    # Check permissions - user must be able to view this transaction
+    if not can_user_view_transaction(request.user, transaction):
         return Response({
             'success': False,
             'message': 'Not authorized to view this transaction'

@@ -29,10 +29,10 @@ class WithdrawalApprovalAdmin(admin.ModelAdmin):
 @admin.register(RequestApproval)
 class RequestApprovalAdmin(admin.ModelAdmin):
     list_display = [
-        'transaction', 'approver', 'approval_level', 'status', 
+        'transaction', 'approver', 'status', 
         'approved_at', 'created_at'
     ]
-    list_filter = ['status', 'approval_level', 'created_at', 'approved_at']
+    list_filter = ['status', 'created_at', 'approved_at']
     search_fields = [
         'transaction__reference', 'approver__username', 
         'approver__email', 'approver__first_name', 'approver__last_name'
@@ -42,7 +42,7 @@ class RequestApprovalAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Approval Details', {
-            'fields': ('transaction', 'approver', 'approval_level', 'status')
+            'fields': ('transaction', 'approver', 'status')
         }),
         ('Comments', {
             'fields': ('comments',)

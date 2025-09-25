@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from apps.transactions.models import Transaction
 from apps.cities.models import City, Account
-from apps.transactions.utils import create_request_approvals
+from apps.transactions.utils import get_user_visible_transactions, can_user_view_transaction
+from apps.accounts.models import User
 from decimal import Decimal, InvalidOperation
 
 
@@ -29,10 +30,8 @@ def dashboard_view(request):
     # Get user's city for filtering
     user_city = request.user.city if hasattr(request.user, 'city') else None
     
-    # Base querysets
-    transactions_qs = Transaction.objects.all()
-    if user_city:
-        transactions_qs = transactions_qs.filter(city=user_city)
+    # Base querysets with privilege-based filtering
+    transactions_qs = get_user_visible_transactions(request.user)
     
     # Calculate statistics
     total_balance = Account.objects.filter(city=user_city).aggregate(
@@ -69,6 +68,28 @@ def dashboard_view(request):
         role_data['my_transactions'] = transactions_qs.filter(created_by=request.user).count()
         role_data['pending_my_transactions'] = transactions_qs.filter(created_by=request.user, status='PENDING').count()
     
+    # Admin data (only for superusers/staff)
+    admin_data = {}
+    if request.user.is_superuser or request.user.is_staff:
+        try:
+            from apps.admin_panel.models import ApproverAssignment, ApprovalConfiguration
+            
+            admin_data = {
+                'deposit_assignments': ApproverAssignment.get_approvers_for_transaction_type('DEPOSIT', active_only=False),
+                'withdrawal_assignments': ApproverAssignment.get_approvers_for_transaction_type('WITHDRAWAL', active_only=False),
+                'deposit_config': ApprovalConfiguration.objects.filter(transaction_type='DEPOSIT').first(),
+                'withdrawal_config': ApprovalConfiguration.objects.filter(transaction_type='WITHDRAWAL').first(),
+                'available_approvers': User.objects.filter(
+                    role__in=['APPROVER_1', 'APPROVER_2', 'APPROVER_3', 'APPROVER_4', 'APPROVER_5'],
+                    is_active=True
+                ).order_by('role'),
+                'active_deposit_count': ApproverAssignment.objects.filter(transaction_type='DEPOSIT', is_active=True).count(),
+                'active_withdrawal_count': ApproverAssignment.objects.filter(transaction_type='WITHDRAWAL', is_active=True).count(),
+            }
+        except ImportError:
+            # Admin panel not available
+            admin_data = {}
+
     context = {
         'user_name': request.user.full_name,
         'user_role': request.user.role,
@@ -81,6 +102,7 @@ def dashboard_view(request):
         'all_transactions': all_transactions,
         'pending_approvals': pending_approvals,
         'role_data': role_data,
+        'admin_data': admin_data,
     }
     
     return render(request, 'index.html', context)
@@ -128,8 +150,7 @@ def create_transaction_view(request):
         
         # For withdrawals, check balance
         if transaction_type == 'WITHDRAWAL' and not account.can_withdraw(amount):
-            messages.error(request, 'Insufficient account balance.')
-            return redirect('create_transaction')
+            return HttpResponseRedirect('/transactions/create/?insufficient_balance=true')
         
         # Create transaction
         try:
@@ -158,12 +179,14 @@ def create_transaction_view(request):
     user_city = request.user.city
     account = Account.objects.filter(city=user_city).first() if user_city else None
     pre_selected_type = request.GET.get('type', '')
+    insufficient_balance = request.GET.get('insufficient_balance', False)
     
     context = {
         'user_city': user_city,
         'account': account,
         'account_balance': account.balance if account else Decimal('0.00'),
         'pre_selected_type': pre_selected_type,
+        'insufficient_balance': insufficient_balance,
     }
     
     return render(request, 'transactions/create_transaction.html', context)
@@ -175,11 +198,10 @@ def transaction_detail_view(request, transaction_id):
     try:
         transaction = Transaction.objects.get(id=transaction_id)
         
-        # Check if user can view this transaction
-        if not request.user.can_create_requests() and transaction.created_by != request.user:
-            if not request.user.can_approve_requests():
-                messages.error(request, 'You do not have permission to view this transaction.')
-                return redirect('dashboard')
+        # Check if user has privilege to view this transaction
+        if not can_user_view_transaction(request.user, transaction):
+            messages.error(request, 'You do not have permission to view this transaction.')
+            return redirect('dashboard')
         
         context = {
             'transaction': transaction,
@@ -199,11 +221,7 @@ def transactions_list_view(request):
     from django.db.models import Q
     from datetime import datetime, date
     
-    transactions = Transaction.objects.select_related('account', 'city', 'created_by').order_by('-created_at')
-    
-    # Filter by city if not admin
-    if request.user.city:
-        transactions = transactions.filter(city=request.user.city)
+    transactions = get_user_visible_transactions(request.user).select_related('account', 'city', 'created_by').order_by('-created_at')
     
     # Get filter parameters from request
     start_date = request.GET.get('start_date')
@@ -367,10 +385,8 @@ def reports_view(request):
     # Get user's city for filtering
     user_city = request.user.city if request.user.role != 'ADMIN' else None
     
-    # Base querysets
-    transactions_qs = Transaction.objects.all()
-    if user_city:
-        transactions_qs = transactions_qs.filter(city=user_city)
+    # Base querysets with privilege-based filtering
+    transactions_qs = get_user_visible_transactions(request.user)
     
     # Calculate various statistics
     this_month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)

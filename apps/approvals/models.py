@@ -81,29 +81,22 @@ class BaseApproval(models.Model):
 
 class RequestApproval(BaseApproval):
     """
-    Approval model for incoming/outgoing requests using the 5-role system
+    Approval model for incoming/outgoing requests using any-order approval system
     """
-    approval_level = models.IntegerField(help_text="Approval level (1, 2, or 3)")
     
     class Meta:
         db_table = 'request_approvals'
         verbose_name = 'Request Approval'
         verbose_name_plural = 'Request Approvals'
         unique_together = ['transaction', 'approver']
-        ordering = ['approval_level', 'created_at']
-
-    def save(self, *args, **kwargs):
-        # Automatically set approval level based on approver's role
-        if not self.approval_level and self.approver:
-            self.approval_level = self.approver.get_approval_level()
-        super().save(*args, **kwargs)
+        ordering = ['created_at']
 
     def can_be_processed(self):
-        """Check if this approval can be processed - now allows any approver to approve"""
+        """Check if this approval can be processed - any approver can approve in any order"""
         if self.status != 'PENDING':
             return False
         
-        # Any approver can now process their approval regardless of level
+        # Any approver can now process their approval regardless of order
         return True
 
 

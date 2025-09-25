@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Approver Statistics - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Approver Statistics</h1>
+                    <p class="mt-2 text-gray-600">Overview of approver assignments and configurations</p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'admin_panel:approver_management' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Management
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out">
+                        <i class="fas fa-home mr-2"></i>
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Deposit Statistics -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-arrow-up text-green-600 mr-2"></i>
+                        Deposit Approvers
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900">{{ deposit_stats.total_assignments }}</div>
+                            <div class="text-sm text-gray-600">Total Assignments</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">{{ deposit_stats.active_assignments }}</div>
+                            <div class="text-sm text-gray-600">Active Assignments</div>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <div class="text-lg font-semibold text-gray-900">{{ deposit_stats.required_approvals }}</div>
+                        <div class="text-sm text-gray-600">Required Approvals</div>
+                    </div>
+                    
+                    {% if deposit_stats.assignments %}
+                    <div class="space-y-2">
+                        <h4 class="text-sm font-medium text-gray-900 mb-2">Assigned Approvers</h4>
+                        {% for assignment in deposit_stats.assignments %}
+                        <div class="flex items-center justify-between py-2 px-3 rounded {% if assignment.is_active %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                            <div>
+                                <span class="text-sm font-medium {% if assignment.is_active %}text-gray-900{% else %}text-gray-600{% endif %}">{{ assignment.approver.full_name }}</span>
+                                <span class="text-sm text-gray-600 ml-2">{{ assignment.approver.role }}</span>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded {% if assignment.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                                {% if assignment.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="fas fa-users text-3xl mb-2"></i>
+                        <p>No deposit approvers assigned</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Withdrawal Statistics -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-arrow-down text-red-600 mr-2"></i>
+                        Withdrawal Approvers
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900">{{ withdrawal_stats.total_assignments }}</div>
+                            <div class="text-sm text-gray-600">Total Assignments</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-600">{{ withdrawal_stats.active_assignments }}</div>
+                            <div class="text-sm text-gray-600">Active Assignments</div>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <div class="text-lg font-semibold text-gray-900">{{ withdrawal_stats.required_approvals }}</div>
+                        <div class="text-sm text-gray-600">Required Approvals</div>
+                    </div>
+                    
+                    {% if withdrawal_stats.assignments %}
+                    <div class="space-y-2">
+                        <h4 class="text-sm font-medium text-gray-900 mb-2">Assigned Approvers</h4>
+                        {% for assignment in withdrawal_stats.assignments %}
+                        <div class="flex items-center justify-between py-2 px-3 rounded {% if assignment.is_active %}bg-red-50 border border-red-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                            <div>
+                                <span class="text-sm font-medium {% if assignment.is_active %}text-gray-900{% else %}text-gray-600{% endif %}">{{ assignment.approver.full_name }}</span>
+                                <span class="text-sm text-gray-600 ml-2">{{ assignment.approver.role }}</span>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded {% if assignment.is_active %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                                {% if assignment.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="fas fa-users text-3xl mb-2"></i>
+                        <p>No withdrawal approvers assigned</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Information -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="px-6 py-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">System Information</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>The required approval count is automatically calculated based on active approvers</li>
+                                <li>Inactive approvers are shown but do not count toward the required approval threshold</li>
+                                <li>Approvers can approve transactions in any order (no sequential requirements)</li>
+                                <li>Use the management panel to add, remove, or toggle approver status</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-6 flex justify-center space-x-4">
+            <a href="{% url 'admin_panel:approver_management' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition duration-150 ease-in-out">
+                <i class="fas fa-cogs mr-2"></i>
+                Manage Approvers
+            </a>
+            <a href="/admin/" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition duration-150 ease-in-out">
+                <i class="fas fa-database mr-2"></i>
+                Django Admin
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

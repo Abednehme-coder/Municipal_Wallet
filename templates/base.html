@@ -51,6 +51,11 @@
                         <a href="{% url 'dashboard' %}" class="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-home mr-1"></i>Dashboard
                         </a>
+                        {% if user.can_create_requests %}
+                        <a href="{% url 'create_transaction' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-plus mr-1"></i>Create Transaction
+                        </a>
+                        {% endif %}
                         <a href="{% url 'transactions_list' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-exchange-alt mr-1"></i>Transactions
                         </a>
@@ -62,6 +67,11 @@
                         <a href="{% url 'reports' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-chart-bar mr-1"></i>Reports
                         </a>
+                        {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'admin_panel:approver_management' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-cogs mr-1"></i>Admin Panel
+                        </a>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -134,6 +144,11 @@
                     <a href="{% url 'dashboard' %}" class="text-gray-900 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
+                    {% if user.can_create_requests %}
+                    <a href="{% url 'create_transaction' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-plus mr-2"></i>Create Transaction
+                    </a>
+                    {% endif %}
                     <a href="{% url 'transactions_list' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
                         <i class="fas fa-exchange-alt mr-2"></i>Transactions
                     </a>
@@ -145,6 +160,11 @@
                     <a href="{% url 'reports' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
                         <i class="fas fa-chart-bar mr-2"></i>Reports
                     </a>
+                    {% if user.is_superuser or user.is_staff %}
+                    <a href="{% url 'admin_panel:approver_management' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-cogs mr-2"></i>Admin Panel
+                    </a>
+                    {% endif %}
                     
                     <!-- Mobile User Actions -->
                     <div class="border-t border-gray-200 pt-3 mt-3">
@@ -190,7 +210,58 @@
         </div>
     </footer>
 
+    <!-- Popup Modal -->
+    <div id="popupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2" id="popupTitle">Error</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500" id="popupMessage">An error occurred.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="popupCloseBtn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <!-- Popup Modal JavaScript -->
+    <script>
+        function showPopup(title, message) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupMessage').textContent = message;
+            document.getElementById('popupModal').classList.remove('hidden');
+        }
+        
+        function hidePopup() {
+            document.getElementById('popupModal').classList.add('hidden');
+        }
+        
+        // Close popup when clicking the close button
+        document.getElementById('popupCloseBtn').addEventListener('click', hidePopup);
+        
+        // Close popup when clicking outside the modal
+        document.getElementById('popupModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hidePopup();
+            }
+        });
+        
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hidePopup();
+            }
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

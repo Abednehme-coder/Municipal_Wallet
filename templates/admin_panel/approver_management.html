@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Approver Management - Admin Panel{% endblock %}
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="max-w-5xl mx-auto">
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="px-4 py-5 sm:p-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Approver Management</h1>
+                <p class="text-gray-600">Assign and manage approvers for Deposits and Withdrawals. Toggle active status or reassign levels dynamically.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900">Deposit Approvers</h2>
+                        <div class="text-sm text-gray-500">Required: {{ active_deposit_count }}</div>
+                    </div>
+                    <div class="space-y-3">
+                        {% if deposit_assignments %}
+                        <div class="text-xs text-gray-500 mb-2">Assigned Approvers (Active/Inactive)</div>
+                        {% endif %}
+                        {% for a in deposit_assignments %}
+                        <div class="flex items-center justify-between border rounded-md p-3 {% if a.is_active %}border-gray-200 bg-white{% else %}border-gray-300 bg-gray-50{% endif %}">
+                            <div>
+                                <div class="text-sm font-medium {% if a.is_active %}text-gray-900{% else %}text-gray-600{% endif %}">{{ a.approver.full_name }}</div>
+                                <div class="text-sm {% if a.is_active %}text-gray-600{% else %}text-gray-500{% endif %}">{{ a.approver.role }}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button data-id="{{ a.id }}" class="toggle-assignment px-2 py-1 text-xs rounded {% if a.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-700{% endif %}">{% if a.is_active %}Active{% else %}Inactive{% endif %}</button>
+                                <button data-id="{{ a.id }}" class="remove-assignment px-2 py-1 text-xs rounded bg-red-100 text-red-800">Remove</button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-sm text-gray-500">No assignments yet.</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 border-t pt-4">
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Add Approver</h3>
+                        <div class="flex items-center space-x-2">
+                            <select id="deposit_user" class="flex-1 border rounded px-2 py-2 text-sm">
+                                <option value="">Select an approver...</option>
+                                {% for u in available_deposit_approvers %}
+                                <option value="{{ u.id }}">{{ u.full_name }} ({{ u.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <button data-type="DEPOSIT" class="assign-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded flex items-center">
+                                <i class="fas fa-plus mr-1"></i>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900">Withdrawal Approvers</h2>
+                        <div class="text-sm text-gray-500">Required: {{ active_withdrawal_count }}</div>
+                    </div>
+                    <div class="space-y-3">
+                        {% if withdrawal_assignments %}
+                        <div class="text-xs text-gray-500 mb-2">Assigned Approvers (Active/Inactive)</div>
+                        {% endif %}
+                        {% for a in withdrawal_assignments %}
+                        <div class="flex items-center justify-between border rounded-md p-3 {% if a.is_active %}border-gray-200 bg-white{% else %}border-gray-300 bg-gray-50{% endif %}">
+                            <div>
+                                <div class="text-sm font-medium {% if a.is_active %}text-gray-900{% else %}text-gray-600{% endif %}">{{ a.approver.full_name }}</div>
+                                <div class="text-sm {% if a.is_active %}text-gray-600{% else %}text-gray-500{% endif %}">{{ a.approver.role }}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button data-id="{{ a.id }}" class="toggle-assignment px-2 py-1 text-xs rounded {% if a.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-700{% endif %}">{% if a.is_active %}Active{% else %}Inactive{% endif %}</button>
+                                <button data-id="{{ a.id }}" class="remove-assignment px-2 py-1 text-xs rounded bg-red-100 text-red-800">Remove</button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-sm text-gray-500">No assignments yet.</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 border-t pt-4">
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Add Approver</h3>
+                        <div class="flex items-center space-x-2">
+                            <select id="withdraw_user" class="flex-1 border rounded px-2 py-2 text-sm">
+                                <option value="">Select an approver...</option>
+                                {% for u in available_withdrawal_approvers %}
+                                <option value="{{ u.id }}">{{ u.full_name }} ({{ u.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <button data-type="WITHDRAWAL" class="assign-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded flex items-center">
+                                <i class="fas fa-plus mr-1"></i>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg mt-6">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Automatic Configuration</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>The required approval count is automatically updated when you add, remove, or toggle approvers. The system ensures that the required count matches the number of active approvers assigned.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function post(url, data) {
+        const form = new FormData();
+        for (const [k,v] of Object.entries(data)) form.append(k, v);
+        form.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        return fetch(url, { method: 'POST', body: form }).then(r => r.json());
+    }
+
+    document.querySelectorAll('.assign-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const type = btn.getAttribute('data-type');
+            const userId = type === 'DEPOSIT' ? document.getElementById('deposit_user').value : document.getElementById('withdraw_user').value;
+            
+            if (!userId) {
+                showPopup('Error', 'Please select an approver');
+                return;
+            }
+            
+            const res = await post('{% url "admin_panel:assign_approver" %}', { transaction_type: type, approver_id: userId });
+            if (res.success) { 
+                location.reload(); 
+            } else { 
+                showPopup('Error', res.message || 'Failed to assign approver'); 
+            }
+        });
+    });
+
+    document.querySelectorAll('.remove-assignment').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            const res = await post('{% url "admin_panel:remove_approver" %}', { assignment_id: id });
+            if (res.success) { location.reload(); } else { showPopup('Error', res.message || 'Failed to remove approver'); }
+        });
+    });
+
+    document.querySelectorAll('.toggle-assignment').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            const res = await post('{% url "admin_panel:toggle_approver_status" %}', { assignment_id: id });
+            if (res.success) { location.reload(); } else { showPopup('Error', res.message || 'Failed to update status'); }
+        });
+    });
+
+});
+</script>
+{% endblock %}
+
+

@@ -196,6 +196,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial setup
     updateVisualHighlighting();
     toggleDepositorFields();
+    
+    // Show insufficient balance popup if needed
+    {% if insufficient_balance %}
+    showPopup('Insufficient Account Balance', 'The withdrawal amount exceeds your account balance. Please enter a smaller amount.');
+    {% endif %}
 });
 
 document.querySelector('form').addEventListener('submit', function(e) {
@@ -237,7 +242,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         const balance = {{ account_balance }};
         if (parseFloat(amount) > balance) {
             e.preventDefault();
-            alert('Withdrawal amount cannot exceed account balance.');
+            showPopup('Insufficient Account Balance', 'The withdrawal amount exceeds your account balance. Please enter a smaller amount.');
             return;
         }
     }
