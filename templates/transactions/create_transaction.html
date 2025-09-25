@@ -150,6 +150,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const transactionTypeRadios = document.querySelectorAll('input[name="type"]');
     const depositorInfo = document.getElementById('depositor-info');
     
+    // Get the label elements for visual styling
+    const depositLabel = document.querySelector('input[value="DEPOSIT"]').closest('label');
+    const withdrawalLabel = document.querySelector('input[value="WITHDRAWAL"]').closest('label');
+    
+    // Function to update visual highlighting
+    function updateVisualHighlighting() {
+        const selectedType = document.querySelector('input[name="type"]:checked');
+        
+        if (selectedType && selectedType.value === 'DEPOSIT') {
+            // Highlight deposit, unhighlight withdrawal
+            depositLabel.className = 'relative flex items-center p-4 border-2 border-green-500 bg-green-50 rounded-lg cursor-pointer hover:border-green-500';
+            withdrawalLabel.className = 'relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-red-500';
+        } else if (selectedType && selectedType.value === 'WITHDRAWAL') {
+            // Highlight withdrawal, unhighlight deposit
+            withdrawalLabel.className = 'relative flex items-center p-4 border-2 border-red-500 bg-red-50 rounded-lg cursor-pointer hover:border-red-500';
+            depositLabel.className = 'relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-500';
+        }
+    }
+    
     // Function to toggle depositor fields
     function toggleDepositorFields() {
         const selectedType = document.querySelector('input[name="type"]:checked');
@@ -168,10 +187,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners to radio buttons
     transactionTypeRadios.forEach(radio => {
-        radio.addEventListener('change', toggleDepositorFields);
+        radio.addEventListener('change', function() {
+            updateVisualHighlighting();
+            toggleDepositorFields();
+        });
     });
     
-    // Initial check for pre-selected type
+    // Initial setup
+    updateVisualHighlighting();
     toggleDepositorFields();
 });
 
