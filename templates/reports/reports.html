@@ -8,8 +8,22 @@
     <!-- Header -->
     <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
         <div class="px-4 py-5 sm:p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
-            <p class="text-gray-600">Financial reports and transaction analytics</p>
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+                    <p class="text-gray-600">Financial reports and transaction analytics</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="exportData('csv')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                        <i class="fas fa-file-csv mr-2"></i>
+                        Export Recent Transactions CSV
+                    </button>
+                    <button onclick="exportData('json')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                        <i class="fas fa-file-code mr-2"></i>
+                        Export Recent Transactions JSON
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -177,4 +191,120 @@
         </div>
     </div>
 </div>
+
+<script>
+function exportData(format) {
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+    button.disabled = true;
+    
+    // Create export URL
+    const exportUrl = '{% url "export_transactions" %}?format=' + format;
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.' + format;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Restore button state after a short delay
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }, 1000);
+}
+
+// Add advanced export options
+function showAdvancedExport() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
+    modal.innerHTML = 
+        '<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">' +
+            '<div class="mt-3">' +
+                '<h3 class="text-lg font-medium text-gray-900 mb-4">Advanced Export Options</h3>' +
+                '<div class="space-y-4">' +
+                    '<div>' +
+                        '<label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>' +
+                        '<div class="grid grid-cols-2 gap-2">' +
+                            '<input type="date" id="start_date" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                            '<input type="date" id="end_date" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                        '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>' +
+                        '<select id="transaction_type" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                            '<option value="">All Types</option>' +
+                            '<option value="DEPOSIT">Deposits Only</option>' +
+                            '<option value="WITHDRAWAL">Withdrawals Only</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label class="block text-sm font-medium text-gray-700 mb-1">Status</label>' +
+                        '<select id="status" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                            '<option value="">All Statuses</option>' +
+                            '<option value="PENDING">Pending</option>' +
+                            '<option value="APPROVED">Approved</option>' +
+                            '<option value="EXECUTED">Executed</option>' +
+                            '<option value="REJECTED">Rejected</option>' +
+                            '<option value="CANCELLED">Cancelled</option>' +
+                        '</select>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="flex justify-end space-x-3 mt-6">' +
+                    '<button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">' +
+                        'Cancel' +
+                    '</button>' +
+                    '<button onclick="exportWithFilters(\'csv\')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">' +
+                        'Export CSV' +
+                    '</button>' +
+                    '<button onclick="exportWithFilters(\'json\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">' +
+                        'Export JSON' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    
+    document.body.appendChild(modal);
+}
+
+function closeModal() {
+    const modal = document.querySelector('.fixed.inset-0');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function exportWithFilters(format) {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const transactionType = document.getElementById('transaction_type').value;
+    const status = document.getElementById('status').value;
+    
+    // Build query string
+    const params = new URLSearchParams();
+    params.append('export', format);
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (transactionType) params.append('type', transactionType);
+    if (status) params.append('status', status);
+    
+    // Create export URL
+    const exportUrl = '{% url "export_transactions" %}?' + params.toString();
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.' + format;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Close modal
+    closeModal();
+}
+</script>
 {% endblock %}

@@ -32,43 +32,53 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg border-b border-gray-200">
+    <nav class="bg-white shadow-lg border-b border-gray-200" x-data="{ mobileMenuOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
+                <!-- Logo and Brand -->
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <h1 class="text-2xl font-bold text-primary-600">
-                            <i class="fas fa-university mr-2"></i>
-                            Municipal Wallet
+                        <h1 class="text-xl sm:text-2xl font-bold text-primary-600">
+                            <i class="fas fa-university mr-1 sm:mr-2"></i>
+                            <span class="hidden sm:inline">Municipal Wallet</span>
+                            <span class="sm:hidden">MW</span>
                         </h1>
                     </div>
+                    
+                    <!-- Desktop Navigation -->
                     {% if user.is_authenticated %}
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                    <div class="hidden lg:ml-6 lg:flex lg:space-x-8">
                         <a href="{% url 'dashboard' %}" class="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-home mr-1"></i>Dashboard
                         </a>
                         <a href="{% url 'transactions_list' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-exchange-alt mr-1"></i>Transactions
                         </a>
+                        {% if user.can_approve_requests %}
                         <a href="{% url 'approvals_list' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-check-circle mr-1"></i>Approvals
                         </a>
+                        {% endif %}
                         <a href="{% url 'reports' %}" class="text-gray-500 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-chart-bar mr-1"></i>Reports
                         </a>
                     </div>
                     {% endif %}
                 </div>
+
+                <!-- Right side: User info and mobile menu button -->
                 <div class="flex items-center">
                     {% if user.is_authenticated %}
-                    <div class="flex-shrink-0">
-                        <div class="relative">
+                    <!-- Desktop User Info -->
+                    <div class="hidden md:flex md:items-center md:space-x-3">
+                        <!-- Notifications -->
+                        <div class="flex-shrink-0">
                             <button class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                                 <i class="fas fa-bell text-lg"></i>
                             </button>
                         </div>
-                    </div>
-                    <div class="ml-3 relative">
+                        
+                        <!-- User Info -->
                         <div class="flex items-center space-x-3">
                             <div class="text-sm">
                                 <p class="text-gray-700 font-medium">{{ user.full_name }}</p>
@@ -78,14 +88,34 @@
                                 <span class="text-white text-sm font-medium">{{ user.first_name|first }}{{ user.last_name|first }}</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="ml-3">
+                        
+                        <!-- Logout Button -->
                         <form method="post" action="{% url 'logout' %}" class="inline">
                             {% csrf_token %}
                             <button type="submit" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
                                 <i class="fas fa-sign-out-alt mr-1"></i>Logout
                             </button>
                         </form>
+                    </div>
+
+                    <!-- Mobile User Info (Compact) -->
+                    <div class="md:hidden flex items-center space-x-2">
+                        <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ user.first_name|first }}{{ user.last_name|first }}</span>
+                        </div>
+                        <div class="text-sm">
+                            <p class="text-gray-700 font-medium">{{ user.first_name }}</p>
+                            <p class="text-gray-500 text-xs">{{ user.role|title }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <div class="ml-2 lg:hidden">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars text-lg" x-show="!mobileMenuOpen"></i>
+                            <i class="fas fa-times text-lg" x-show="mobileMenuOpen"></i>
+                        </button>
                     </div>
                     {% else %}
                     <div class="flex items-center space-x-4">
@@ -96,6 +126,43 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Mobile Navigation Menu -->
+            {% if user.is_authenticated %}
+            <div class="lg:hidden" x-show="mobileMenuOpen" x-transition>
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 border-t border-gray-200">
+                    <a href="{% url 'dashboard' %}" class="text-gray-900 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="{% url 'transactions_list' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-exchange-alt mr-2"></i>Transactions
+                    </a>
+                    {% if user.can_approve_requests %}
+                    <a href="{% url 'approvals_list' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-check-circle mr-2"></i>Approvals
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'reports' %}" class="text-gray-500 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                    
+                    <!-- Mobile User Actions -->
+                    <div class="border-t border-gray-200 pt-3 mt-3">
+                        <div class="flex items-center px-3 py-2">
+                            <button class="bg-white p-2 rounded-full text-gray-400 hover:text-gray-500 mr-3">
+                                <i class="fas fa-bell text-lg"></i>
+                            </button>
+                            <form method="post" action="{% url 'logout' %}" class="flex-1">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full text-left text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </nav>
 

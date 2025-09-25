@@ -80,6 +80,29 @@
                         </div>
                     </div>
 
+                    <!-- Depositor Information (only for deposits) -->
+                    <div id="depositor-info" class="mb-6" style="display: none;">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Depositor Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="depositor_name" class="block text-sm font-medium text-gray-700 mb-2">Depositor Name</label>
+                                <input type="text" 
+                                       name="depositor_name" 
+                                       id="depositor_name" 
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                       placeholder="Enter depositor's full name">
+                            </div>
+                            <div>
+                                <label for="depositor_phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="tel" 
+                                       name="depositor_phone" 
+                                       id="depositor_phone" 
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                       placeholder="Enter phone number">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Description -->
                     <div class="mb-6">
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -122,7 +145,36 @@
 </div>
 
 <script>
-// Add some basic form validation
+// Add some basic form validation and show/hide depositor fields
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionTypeRadios = document.querySelectorAll('input[name="type"]');
+    const depositorInfo = document.getElementById('depositor-info');
+    
+    // Function to toggle depositor fields
+    function toggleDepositorFields() {
+        const selectedType = document.querySelector('input[name="type"]:checked');
+        if (selectedType && selectedType.value === 'DEPOSIT') {
+            depositorInfo.style.display = 'block';
+            // Make depositor fields required for deposits
+            document.getElementById('depositor_name').required = true;
+            document.getElementById('depositor_phone').required = true;
+        } else {
+            depositorInfo.style.display = 'none';
+            // Remove required attribute for withdrawals
+            document.getElementById('depositor_name').required = false;
+            document.getElementById('depositor_phone').required = false;
+        }
+    }
+    
+    // Add event listeners to radio buttons
+    transactionTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleDepositorFields);
+    });
+    
+    // Initial check for pre-selected type
+    toggleDepositorFields();
+});
+
 document.querySelector('form').addEventListener('submit', function(e) {
     const amount = document.getElementById('amount').value;
     const type = document.querySelector('input[name="type"]:checked');
@@ -137,6 +189,24 @@ document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         alert('Please enter a valid amount.');
         return;
+    }
+    
+    // For deposits, validate depositor information
+    if (type.value === 'DEPOSIT') {
+        const depositorName = document.getElementById('depositor_name').value.trim();
+        const depositorPhone = document.getElementById('depositor_phone').value.trim();
+        
+        if (!depositorName) {
+            e.preventDefault();
+            alert('Please enter the depositor\'s name.');
+            return;
+        }
+        
+        if (!depositorPhone) {
+            e.preventDefault();
+            alert('Please enter the depositor\'s phone number.');
+            return;
+        }
     }
     
     // For withdrawals, check if amount exceeds balance

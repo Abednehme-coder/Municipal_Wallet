@@ -103,6 +103,18 @@
                             <dt class="text-sm font-medium text-gray-500">City</dt>
                             <dd class="mt-1 text-sm text-gray-900">{{ transaction.city.name }}</dd>
                         </div>
+                        
+                        {% if transaction.type == 'DEPOSIT' and transaction.depositor_name %}
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Depositor Name</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ transaction.depositor_name }}</dd>
+                        </div>
+                        
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Depositor Phone</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ transaction.depositor_phone }}</dd>
+                        </div>
+                        {% endif %}
                     </dl>
                 </div>
             </div>

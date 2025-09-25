@@ -30,6 +30,11 @@ class Transaction(models.Model):
     description = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     reference = models.CharField(max_length=50, unique=True, blank=True)
+    
+    # Depositor information (for deposits only)
+    depositor_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the person making the deposit")
+    depositor_phone = models.CharField(max_length=20, blank=True, null=True, help_text="Phone number of the depositor")
+    
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -50,12 +55,30 @@ class Transaction(models.Model):
         super().save(*args, **kwargs)
 
     def generate_reference(self):
-        """Generate unique transaction reference"""
-        import random
-        import string
+        """Generate incremental transaction reference starting from 1"""
+        # Get the highest reference number for this transaction type
         prefix = 'DEP' if self.type == 'DEPOSIT' else 'WTH'
-        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        return f"{prefix}-{random_str}"
+        
+        # Find the highest numeric reference for this type
+        existing_refs = Transaction.objects.filter(
+            reference__startswith=prefix
+        ).exclude(
+            reference__isnull=True
+        ).exclude(reference='')
+        
+        max_num = 0
+        for ref in existing_refs:
+            try:
+                # Extract number from reference (e.g., "DEP-123" -> 123)
+                num_part = ref.reference.split('-')[1] if '-' in ref.reference else ref.reference[3:]
+                num = int(num_part)
+                max_num = max(max_num, num)
+            except (ValueError, IndexError):
+                continue
+        
+        # Return next number
+        next_num = max_num + 1
+        return f"{prefix}-{next_num:06d}"  # Format as 6-digit number with leading zeros
 
     def can_be_cancelled(self):
         """Check if transaction can be cancelled"""

@@ -202,11 +202,11 @@ class RequestApprovalView(generics.UpdateAPIView):
                 'message': f'You have already {existing_approval.status.lower()} this transaction'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if this approval can be processed (sequential approval)
+        # Check if this approval can be processed (now allows any approver)
         if not approval.can_be_processed():
             return Response({
                 'success': False,
-                'message': 'Cannot process approval. Previous approval levels must be completed first.'
+                'message': 'Cannot process approval. This approval is not pending.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         if action == 'approve':

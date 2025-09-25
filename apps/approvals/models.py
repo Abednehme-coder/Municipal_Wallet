@@ -99,18 +99,12 @@ class RequestApproval(BaseApproval):
         super().save(*args, **kwargs)
 
     def can_be_processed(self):
-        """Check if this approval can be processed based on sequential approval"""
+        """Check if this approval can be processed - now allows any approver to approve"""
         if self.status != 'PENDING':
             return False
         
-        # Check if previous approval levels are completed
-        previous_approvals = RequestApproval.objects.filter(
-            transaction=self.transaction,
-            approval_level__lt=self.approval_level,
-            status='PENDING'
-        ).exists()
-        
-        return not previous_approvals
+        # Any approver can now process their approval regardless of level
+        return True
 
 
 # Keep the old models for backward compatibility during migration

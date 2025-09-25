@@ -10,4 +10,5 @@ urlpatterns = [
     path('approvals/', views.approvals_list_view, name='approvals_list'),
     path('approvals/<uuid:transaction_id>/process/', views.process_approval_view, name='process_approval'),
     path('reports/', views.reports_view, name='reports'),
+    path('reports/export/', views.export_transactions_view, name='export_transactions'),
 ]

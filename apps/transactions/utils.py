@@ -4,50 +4,41 @@ from django.conf import settings
 def get_approval_progress(transaction):
     """
     Get approval progress for a transaction using the new 5-role system
-    Enforces sequential approval: deposits need approvers 1,2,3; withdrawals need approvers 1,2,3,4,5
+    Now allows any approver to approve regardless of level
     """
     from apps.approvals.models import RequestApproval, DepositApproval, WithdrawalApproval
     
     # Use new RequestApproval system if available
     if hasattr(transaction, 'requestapproval_set'):
-        approvals = RequestApproval.objects.filter(transaction=transaction).order_by('approval_level')
+        approvals = RequestApproval.objects.filter(transaction=transaction)
         
-        # Determine required approval levels based on transaction type
+        # Determine required approval count based on transaction type
         if transaction.type == 'DEPOSIT':
-            required_levels = [1, 2, 3]  # Deposits need approvers 1, 2, 3
+            required_count = 3  # Deposits need 3 approvals (any level)
         else:  # WITHDRAWAL
-            required_levels = [1, 2, 3, 4, 5]  # Withdrawals need approvers 1, 2, 3, 4, 5
+            required_count = 5  # Withdrawals need 5 approvals (any level)
         
-        # Check if all required levels are approved
-        approved_levels = []
-        rejected_levels = []
-        pending_levels = []
+        # Count approvals regardless of level
+        approved_count = approvals.filter(status='APPROVED').count()
+        rejected_count = approvals.filter(status='REJECTED').count()
+        pending_count = approvals.filter(status='PENDING').count()
         
-        for approval in approvals:
-            if approval.approval_level in required_levels:
-                if approval.status == 'APPROVED':
-                    approved_levels.append(approval.approval_level)
-                elif approval.status == 'REJECTED':
-                    rejected_levels.append(approval.approval_level)
-                else:  # PENDING
-                    pending_levels.append(approval.approval_level)
-        
-        # Transaction is complete only if ALL required levels are approved
-        is_complete = len(approved_levels) == len(required_levels)
-        is_rejected = len(rejected_levels) > 0
+        # Transaction is complete when we have enough approvals
+        is_complete = approved_count >= required_count
+        is_rejected = rejected_count > 0
         
         return {
-            'approved': len(approved_levels),
-            'rejected': len(rejected_levels),
-            'pending': len(pending_levels),
-            'required': len(required_levels),
-            'total': len(required_levels),
+            'approved': approved_count,
+            'rejected': rejected_count,
+            'pending': pending_count,
+            'required': required_count,
+            'total': approvals.count(),
             'is_complete': is_complete,
             'is_rejected': is_rejected,
-            'approved_levels': approved_levels,
-            'rejected_levels': rejected_levels,
-            'pending_levels': pending_levels,
-            'required_levels': required_levels
+            'approved_levels': [a.approval_level for a in approvals.filter(status='APPROVED')],
+            'rejected_levels': [a.approval_level for a in approvals.filter(status='REJECTED')],
+            'pending_levels': [a.approval_level for a in approvals.filter(status='PENDING')],
+            'required_levels': list(range(1, required_count + 1))
         }
     else:
         # Fallback to legacy system
@@ -131,15 +122,15 @@ def create_request_approvals(transaction):
 
 def get_next_approver_for_transaction(transaction):
     """
-    Get the next approver who should process a transaction
+    Get any pending approver for a transaction (no longer sequential)
     """
     from apps.approvals.models import RequestApproval
     
-    # Find the first pending approval
+    # Find any pending approval
     next_approval = RequestApproval.objects.filter(
         transaction=transaction,
         status='PENDING'
-    ).order_by('approval_level').first()
+    ).first()
     
     return next_approval.approver if next_approval else None
 
@@ -147,6 +138,7 @@ def get_next_approver_for_transaction(transaction):
 def can_user_process_transaction(user, transaction):
     """
     Check if a user can process a specific transaction
+    Now allows any approver to process any transaction
     """
     from apps.approvals.models import RequestApproval
     
@@ -163,5 +155,5 @@ def can_user_process_transaction(user, transaction):
     if not approval:
         return False
     
-    # Check if this approval can be processed (sequential approval)
+    # Any approver can now process their approval
     return approval.can_be_processed()
