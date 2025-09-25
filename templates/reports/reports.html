@@ -18,10 +18,6 @@
                         <i class="fas fa-file-csv mr-2"></i>
                         Export Recent Transactions CSV
                     </button>
-                    <button onclick="exportData('json')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
-                        <i class="fas fa-file-code mr-2"></i>
-                        Export Recent Transactions JSON
-                    </button>
                 </div>
             </div>
         </div>
@@ -200,13 +196,13 @@ function exportData(format) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
     button.disabled = true;
     
-    // Create export URL
-    const exportUrl = '{% url "export_transactions" %}?format=' + format;
+    // Create export URL (only CSV supported)
+    const exportUrl = '{% url "export_transactions" %}?format=csv';
     
     // Create a temporary link to trigger download
     const link = document.createElement('a');
     link.href = exportUrl;
-    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.' + format;
+    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -261,9 +257,6 @@ function showAdvancedExport() {
                     '<button onclick="exportWithFilters(\'csv\')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">' +
                         'Export CSV' +
                     '</button>' +
-                    '<button onclick="exportWithFilters(\'json\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">' +
-                        'Export JSON' +
-                    '</button>' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -284,9 +277,9 @@ function exportWithFilters(format) {
     const transactionType = document.getElementById('transaction_type').value;
     const status = document.getElementById('status').value;
     
-    // Build query string
+    // Build query string (only CSV supported)
     const params = new URLSearchParams();
-    params.append('export', format);
+    params.append('format', 'csv');
     if (startDate) params.append('start_date', startDate);
     if (endDate) params.append('end_date', endDate);
     if (transactionType) params.append('type', transactionType);
@@ -298,7 +291,7 @@ function exportWithFilters(format) {
     // Create a temporary link to trigger download
     const link = document.createElement('a');
     link.href = exportUrl;
-    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.' + format;
+    link.download = 'recent_transactions_' + new Date().toISOString().slice(0,10) + '.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -51,8 +51,8 @@ def dashboard_view(request):
     this_month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     this_month_transactions = transactions_qs.filter(created_at__gte=this_month_start).count()
     
-    # Recent transactions (last 3 only)
-    recent_transactions = transactions_qs.order_by('-created_at')[:3]
+    # All transactions (for scrollable list)
+    all_transactions = transactions_qs.order_by('-created_at')
     
     # Role-specific data
     role_data = {
@@ -78,7 +78,7 @@ def dashboard_view(request):
             'this_month_transactions': this_month_transactions,
             'active_users': 1,  # For now, just show 1
         },
-        'recent_transactions': recent_transactions,
+        'all_transactions': all_transactions,
         'pending_approvals': pending_approvals,
         'role_data': role_data,
     }
@@ -195,16 +195,57 @@ def transaction_detail_view(request, transaction_id):
 
 @login_required
 def transactions_list_view(request):
-    """View for listing all transactions"""
+    """View for listing all transactions with date filtering"""
+    from django.db.models import Q
+    from datetime import datetime, date
+    
     transactions = Transaction.objects.select_related('account', 'city', 'created_by').order_by('-created_at')
     
     # Filter by city if not admin
     if request.user.city:
         transactions = transactions.filter(city=request.user.city)
     
+    # Get filter parameters from request
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    transaction_type = request.GET.get('type')
+    status = request.GET.get('status')
+    
+    # Apply date filters
+    if start_date:
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            transactions = transactions.filter(created_at__date__gte=start_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore filter
+    
+    if end_date:
+        try:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            transactions = transactions.filter(created_at__date__lte=end_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore filter
+    
+    # Apply transaction type filter
+    if transaction_type and transaction_type in ['DEPOSIT', 'WITHDRAWAL']:
+        transactions = transactions.filter(type=transaction_type)
+    
+    # Apply status filter
+    if status and status in ['PENDING', 'APPROVED', 'EXECUTED', 'REJECTED', 'CANCELLED']:
+        transactions = transactions.filter(status=status)
+    
+    # Get filter values for form
+    filter_values = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'type': transaction_type,
+        'status': status,
+    }
+    
     context = {
         'transactions': transactions,
         'user_role': request.user.role,
+        'filter_values': filter_values,
     }
     
     return render(request, 'transactions/transactions_list.html', context)
@@ -374,18 +415,11 @@ def reports_view(request):
 
 @login_required
 def export_transactions_view(request):
-    """Export transaction summary reports in CSV or JSON format"""
-    from django.http import HttpResponse, JsonResponse
+    """Export transaction summary reports in CSV format"""
+    from django.http import HttpResponse
     from django.db.models import Q, Sum, Count
-    import csv
-    import json
     from datetime import datetime, timedelta
     from django.utils import timezone
-    
-    # Get export format
-    format_type = request.GET.get('format', 'csv')
-    if format_type not in ['csv', 'json']:
-        return HttpResponse('Invalid format', status=400)
     
     # Get user's city for filtering
     user_city = request.user.city if request.user.role != 'ADMIN' else None
@@ -414,15 +448,14 @@ def export_transactions_view(request):
     # Get recent transactions (same as reports page - last 10)
     recent_transactions = transactions_qs.order_by('-created_at')[:10]
     
-    if format_type == 'csv':
-        return export_recent_transactions_csv(recent_transactions, user_city)
-    elif format_type == 'json':
-        return export_recent_transactions_json(recent_transactions, user_city)
+    return export_recent_transactions_csv(recent_transactions, user_city)
 
 
 def export_recent_transactions_csv(recent_transactions, user_city):
     """Export recent transactions as CSV"""
     from django.http import HttpResponse
+    from datetime import datetime
+    import csv
     
     response = HttpResponse(content_type='text/csv')
     filename = f"recent_transactions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
@@ -499,57 +532,3 @@ def export_recent_transactions_csv(recent_transactions, user_city):
     
     return response
 
-
-def export_recent_transactions_json(recent_transactions, user_city):
-    """Export recent transactions as JSON"""
-    from django.http import JsonResponse
-    
-    # Prepare transaction data
-    transactions_data = []
-    for transaction in recent_transactions:
-        transaction_data = {
-            'reference': transaction.reference,
-            'type': transaction.type,
-            'amount': float(transaction.amount),
-            'status': transaction.status,
-            'description': transaction.description,
-            'created_by': transaction.created_by.full_name,
-            'created_at': transaction.created_at.isoformat(),
-        }
-        
-        # Add depositor fields for deposits
-        if transaction.type == 'DEPOSIT':
-            transaction_data['depositor_name'] = transaction.depositor_name
-            transaction_data['depositor_phone'] = transaction.depositor_phone
-        
-        # Add city if not filtering by city
-        if not user_city:
-            transaction_data['city'] = transaction.city.name
-        
-        transactions_data.append(transaction_data)
-    
-    # Calculate summary
-    deposits = [t for t in recent_transactions if t.type == 'DEPOSIT']
-    withdrawals = [t for t in recent_transactions if t.type == 'WITHDRAWAL']
-    
-    summary = {
-        'total_transactions': len(recent_transactions),
-        'deposits_count': len(deposits),
-        'withdrawals_count': len(withdrawals),
-    }
-    
-    if deposits:
-        summary['total_deposits_amount'] = float(sum(t.amount for t in deposits))
-    
-    if withdrawals:
-        summary['total_withdrawals_amount'] = float(sum(t.amount for t in withdrawals))
-    
-    return JsonResponse({
-        'export_info': {
-            'generated_at': datetime.now().isoformat(),
-            'city': user_city.name if user_city else 'All Cities',
-            'export_type': 'Recent Transactions Summary'
-        },
-        'summary': summary,
-        'transactions': transactions_data
-    }, json_dumps_params={'indent': 2})
